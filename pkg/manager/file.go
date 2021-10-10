@@ -13,6 +13,44 @@ import (
 	"strings"
 )
 
+func TransferData(ctx context.Context, reader io.Reader, writer io.Writer) chan int {
+	progress := make(chan int)
+	go func() {
+		defer close(progress)
+
+		b := make([]byte, 32768)
+		total := 0
+		for {
+			select {
+			case <- ctx.Done():
+				return
+			default:
+				count, err := reader.Read(b)
+				if count > 0 {
+					_, writeErr := writer.Write(b[:count])
+					if writeErr != nil {
+						return
+					}
+					total += count
+				}
+	
+				if err == io.EOF {
+					return
+				}
+	
+				if err != nil  {
+					fmt.Println("Error")
+					return
+				}
+	
+				progress <- total
+			}
+		}
+	}()
+
+	return progress
+}
+
 func TransferFileContents(ctx context.Context, reader io.Reader, writer io.Writer, task *TaskProgress) {
 	b := make([]byte, 32768)
 	total := 0
@@ -114,18 +152,41 @@ func CompressFileTarGz(ctx context.Context, path string) error {
 	return nil
 }
 
-func DecompressFile(ctx context.Context, task *TaskProgress, path string) error {
-	file, err := os.Open(path)
+func DecompressFileZip(ctx context.Context, path string) (*TaskProgress, error) {
+	reader, err := zip.OpenReader(path)
 	if err != nil {
-		return err
-	}
-	defer file.Close()
-
-	if strings.HasSuffix(path, ".zip") {
-		fmt.Println("ZIP")
-	} else if strings.HasSuffix(path, "tar.gz") {
-		fmt.Println("TAR.GZ")
+		return nil, err
 	}
 
-	return nil
+	task := NewTaskProgress(len(reader.File))
+	go func () {
+		defer reader.Close()
+		defer task.SetDone()
+
+		count := 0
+		for _, file := range reader.File {
+			in, inErr := file.Open()
+			if inErr != nil {
+				task.SetError(inErr)
+				return
+			}
+			defer in.Close()
+
+			out, outErr := os.Create(file.Name)
+			if outErr != nil {
+				task.SetError(outErr)
+				return
+			}
+			defer out.Close()
+
+			progress := TransferData(context.Background(), in, out)
+			for value := range progress {
+				fmt.Println(value)
+			}
+			count ++
+			task.SetProgress(count)
+		}
+	}()
+
+	return task, nil
 }

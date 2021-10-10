@@ -28,6 +28,19 @@ func TestCompressFileZip(t *testing.T) {
 	}
 }
 
-func TestDecompress(t *testing.T) {
+func TestDecompressFileZip(t *testing.T) {
+	task, err := manager.DecompressFileZip(context.Background(), "../arduino-cli_0.19.2_Windows_64bit.zip")
+	if err != nil {
+		t.Error(err)
+	}
 
+	<- task.Done()
+
+	if task.GetError() != nil {
+		t.Error(task.GetError())
+	}
+
+	if task.GetProgress() != task.GetTotal() {
+		t.Fail()
+	}
 }
