@@ -12,7 +12,7 @@ import (
 	"github.com/lucas-inacio/avm/internal/actions"
 )
 
-var CommandGet = cli.Command{
+var CommandGet = &cli.Command{
 	Name: "get",
 	Usage: "download arduino-cli",
 	ArgsUsage: "testando argumentos",
@@ -30,7 +30,7 @@ func main() {
 			},
 		},
 		Commands: []*cli.Command{
-			&CommandGet,
+			CommandGet,
 		},
 	}
 
