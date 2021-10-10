@@ -14,9 +14,15 @@ import (
 )
 
 func ActionGet(cliCtx *cli.Context) error {
-	latest, err := manager.GetLatestRelease()
-	if err != nil {
-		return err
+	version := ""
+	if cliCtx.NArg() == 1 {
+		version = cliCtx.Args().Get(0)
+	} else if cliCtx.NArg() == 0 {
+		latest, err := manager.GetLatestRelease()
+		if err != nil {
+			return err
+		}
+		version = latest.Tag
 	}
 
 	dir, err := os.Getwd()
@@ -25,8 +31,8 @@ func ActionGet(cliCtx *cli.Context) error {
 	}
 
 	ctx := context.Background()
-	fmt.Println("Downloading release " + latest.Tag)
-	task, err := manager.DownloadRelease(ctx, dir, latest.Tag)
+	fmt.Println("Downloading release " + version)
+	task, err := manager.DownloadRelease(ctx, dir, version)
 	if err != nil {
 		return err
 	}
