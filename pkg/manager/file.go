@@ -8,6 +8,7 @@ import (
 	"errors"
 	"io"
 	"os"
+	"path/filepath"
 )
 
 func GetUncompressedZipSize(files []*zip.File) int {
@@ -81,7 +82,7 @@ func CompressFileZip(ctx context.Context, name string, paths []string) (*TaskPro
 	task := NewTaskProgress(size)
 	go func () {
 		defer fileOut.Close()
-		defer task.SetDone()
+		defer task.SetDone(nil)
 
 		writer := zip.NewWriter(fileOut)
 		defer writer.Close()
@@ -92,6 +93,11 @@ func CompressFileZip(ctx context.Context, name string, paths []string) (*TaskPro
 			if inErr != nil {
 				task.SetError(inErr)
 				return
+			}
+
+			// If in same directory extract only the name. Or else preserve hierarchy.
+			if filepath.Dir(name) == filepath.Dir(path) {
+				path = filepath.Base(path)
 			}
 
 			f, err := writer.Create(path)
@@ -131,7 +137,7 @@ func DecompressFileZip(ctx context.Context, path string) (*TaskProgress, error) 
 	task := NewTaskProgress(size)
 	go func () {
 		defer reader.Close()
-		defer task.SetDone()
+		defer task.SetDone(nil)
 
 		for _, file := range reader.File {
 			in, inErr := file.Open()
@@ -141,7 +147,7 @@ func DecompressFileZip(ctx context.Context, path string) (*TaskProgress, error) 
 			}
 			defer in.Close()
 
-			out, outErr := os.Create(file.Name)
+			out, outErr := os.Create(filepath.Dir(path) + string(os.PathSeparator) + file.Name)
 			if outErr != nil {
 				task.SetError(outErr)
 				return

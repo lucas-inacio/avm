@@ -28,6 +28,12 @@ var CommandAvailable = &cli.Command{
 	Action:    actions.ActionAvailable,
 }
 
+var CommandUpdate = &cli.Command{
+	Name:      "update",
+	Usage:     "update arduino-cli version",
+	Action:    actions.ActionUpdate,
+}
+
 func main() {
 	cliApp := &cli.App{
 		Name:  "avm",
@@ -42,6 +48,7 @@ func main() {
 			CommandGet,
 			CommandVersion,
 			CommandAvailable,
+			CommandUpdate,
 		},
 	}
 

@@ -4,13 +4,28 @@ import (
 	"errors"
 	"io"
 	"os/exec"
+	"path/filepath"
 	"regexp"
 )
 
+type ArduinoNotFoundError struct {
+	message string
+}
+
+func NewArduinoNotFoundError() *ArduinoNotFoundError {
+	return &ArduinoNotFoundError{
+		"arduino-cli not found",
+	}
+}
+
+func (err *ArduinoNotFoundError) Error() string {
+	return err.message
+}
+
 func GetArduinoVersion() (string, error) {
-	_, err := exec.LookPath("arduino-cli")
+	_, err := GetArduinoDir()
 	if err != nil {
-		return "", err
+		return "", NewArduinoNotFoundError()
 	}
 
 	cmd := exec.Command("arduino-cli", "version")
@@ -47,4 +62,13 @@ func GetArduinoVersion() (string, error) {
 	}
 
 	return "", errors.New("could not determine arduino-cli version")
+}
+
+func GetArduinoDir() (string, error) {
+	dir, err := exec.LookPath("arduino-cli")
+	if err != nil {
+		return "", NewArduinoNotFoundError()
+	}
+
+	return filepath.Dir(dir), nil
 }

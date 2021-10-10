@@ -14,23 +14,23 @@ import (
 )
 
 const (
-	DumbFileName1    = "tmp/test_file_1.txt"
+	DumbFileName1    = "test_file_1.txt"
 	DumbFileContent1 = "This is a test string"
-	DumbFileName2    = "tmp/test_file_2.txt"
+	DumbFileName2    = "test_file_2.txt"
 	DumbFileContent2 = "This is another test string"
-	OutputFileName   = "tmp/output.zip"
+	OutputFileName   = "output.zip"
 	TmpDirectory     = "tmp"
 )
 
 func createDumbFiles() error {
-	file, err := os.Create(DumbFileName1)
+	file, err := os.Create(TmpDirectory + string(os.PathSeparator) + DumbFileName1)
 	if err != nil {
 		return err
 	}
 	defer file.Close()
 	file.Write([]byte(DumbFileContent1))
 
-	file2, err2 := os.Create(DumbFileName2)
+	file2, err2 := os.Create(TmpDirectory + string(os.PathSeparator) + DumbFileName2)
 	if err2 != nil {
 		return err2
 	}
@@ -41,12 +41,12 @@ func createDumbFiles() error {
 }
 
 func removeDumbFiles() error {
-	err := os.Remove(DumbFileName1)
+	err := os.Remove(TmpDirectory + string(os.PathSeparator) + DumbFileName1)
 	if err != nil {
 		return err
 	}
 
-	err = os.Remove(DumbFileName2)
+	err = os.Remove(TmpDirectory + string(os.PathSeparator) + DumbFileName2)
 	if err != nil {
 		return err
 	}
@@ -143,7 +143,7 @@ func TestDownloadRelease(t *testing.T) {
 }
 
 func TestCompressFileZip(t *testing.T) {
-	if err := os.Mkdir("tmp", os.ModeDir); err != nil {
+	if err := os.Mkdir(TmpDirectory, os.ModeDir); err != nil {
 		t.Error(err)
 	}
 
@@ -152,7 +152,13 @@ func TestCompressFileZip(t *testing.T) {
 	}
 
 	task, err := manager.CompressFileZip(
-		context.Background(), OutputFileName, []string{DumbFileName1, DumbFileName2})
+		context.Background(),
+		TmpDirectory + string(os.PathSeparator) + OutputFileName,
+		[]string{
+			TmpDirectory + string(os.PathSeparator) + DumbFileName1,
+			TmpDirectory + string(os.PathSeparator) + DumbFileName2,
+		},
+	)
 	if err != nil {
 		t.Error(err)
 	}
@@ -167,7 +173,7 @@ func TestCompressFileZip(t *testing.T) {
 		t.Fail()
 	}
 
-	_ , err = os.Stat(OutputFileName)
+	_ , err = os.Stat(TmpDirectory + string(os.PathSeparator) + OutputFileName)
 	if err != nil {
 		t.Error(err)
 	}
@@ -179,7 +185,8 @@ func TestCompressFileZip(t *testing.T) {
 }
 
 func TestDecompressFileZip(t *testing.T) {
-	task, err := manager.DecompressFileZip(context.Background(), OutputFileName)
+	task, err := manager.DecompressFileZip(
+		context.Background(), TmpDirectory + string(os.PathSeparator) + OutputFileName)
 	if err != nil {
 		t.Error(err)
 	}
@@ -194,12 +201,19 @@ func TestDecompressFileZip(t *testing.T) {
 		t.Fail()
 	}
 
-	check1 := checkFileContent(DumbFileName1, DumbFileContent1)
+	check1 := checkFileContent(
+		TmpDirectory + string(os.PathSeparator) + DumbFileName1,
+		DumbFileContent1,
+	)
+		
 	if check1 != nil {
 		t.Error(check1)
 	}
 
-	check2 := checkFileContent(DumbFileName2, DumbFileContent2)
+	check2 := checkFileContent(
+		TmpDirectory + string(os.PathSeparator) + DumbFileName2,
+		DumbFileContent2,
+	)
 	if check2 != nil {
 		t.Error(check2)
 	}
