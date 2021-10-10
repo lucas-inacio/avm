@@ -13,6 +13,15 @@ import (
 	"strings"
 )
 
+func GetUncompressedZipSize(files []*zip.File) int {
+	total := 0
+	for _, file := range files {
+		total += int(file.FileInfo().Size())
+		fmt.Println(file.FileInfo().Size())
+	}
+	return total
+}
+
 func TransferData(ctx context.Context, reader io.Reader, writer io.Writer) chan int {
 	progress := make(chan int)
 	go func() {
@@ -33,7 +42,9 @@ func TransferData(ctx context.Context, reader io.Reader, writer io.Writer) chan 
 					}
 					total += count
 				}
-	
+				
+				progress <- total
+
 				if err == io.EOF {
 					return
 				}
@@ -43,7 +54,6 @@ func TransferData(ctx context.Context, reader io.Reader, writer io.Writer) chan 
 					return
 				}
 	
-				progress <- total
 			}
 		}
 	}()
@@ -54,11 +64,11 @@ func TransferData(ctx context.Context, reader io.Reader, writer io.Writer) chan 
 func TransferFileContents(ctx context.Context, reader io.Reader, writer io.Writer, task *TaskProgress) {
 	b := make([]byte, 32768)
 	total := 0
+	defer task.SetDone()
 	for {
 		select {
 		case <- ctx.Done():
 			task.SetError(errors.New("interrupted"))
-			task.SetDone()
 			return
 		default:
 			count, err := reader.Read(b)
@@ -66,20 +76,17 @@ func TransferFileContents(ctx context.Context, reader io.Reader, writer io.Write
 				_, writeErr := writer.Write(b[:count])
 				if writeErr != nil {
 					task.SetError(writeErr)
-					task.SetDone()
 					return
 				}
 				total += count
 			}
 
 			if err == io.EOF {
-				task.SetDone()
 				return
 			}
 
 			if err != nil  {
 				task.SetError(err)
-				task.SetDone()
 				return
 			}
 
@@ -133,7 +140,6 @@ func CompressFileZip(ctx context.Context, path string) (*TaskProgress, error) {
 		header.Method = zip.Deflate
 	
 		writer := zip.NewWriter(fileOut)
-		// f, err := writer.Create(path)
 		f, err := writer.CreateHeader(header)
 		if err != nil {
 			task.SetError(err)
@@ -158,12 +164,16 @@ func DecompressFileZip(ctx context.Context, path string) (*TaskProgress, error) 
 		return nil, err
 	}
 
-	task := NewTaskProgress(len(reader.File))
+	size := GetUncompressedZipSize(reader.File)
+	fmt.Println("Size:", size)
+
+	totalSize := 0
+	count := 0
+	task := NewTaskProgress(size)
 	go func () {
 		defer reader.Close()
 		defer task.SetDone()
 
-		count := 0
 		for _, file := range reader.File {
 			in, inErr := file.Open()
 			if inErr != nil {
@@ -181,11 +191,12 @@ func DecompressFileZip(ctx context.Context, path string) (*TaskProgress, error) 
 
 			progress := TransferData(context.Background(), in, out)
 			for value := range progress {
-				fmt.Println(value)
+				count = value
 			}
-			count ++
-			task.SetProgress(count)
+			totalSize += count
+			task.SetProgress(totalSize)
 		}
+		fmt.Println("After:", totalSize)
 	}()
 
 	return task, nil
