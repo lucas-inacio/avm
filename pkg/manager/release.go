@@ -45,7 +45,7 @@ func readData(reader io.ReadCloser) ([]byte, error) {
 	return content, nil
 }
 
-func downloadFromURL(ctx context.Context, task *TaskProgress, path, url string, size int) {
+func downloadFromURL(ctx context.Context, task *TaskProgress, path, url string) {
 	out, err := os.Create(path)
 	if err != nil {
 		task.SetError(err)
@@ -93,7 +93,7 @@ func downloadFromURL(ctx context.Context, task *TaskProgress, path, url string, 
 				return
 			}
 
-			task.SetProgress(float32(total) / float32(size))
+			task.SetProgress(total)
 		case <- ctx.Done():
 			task.SetError(errors.New("interrupted"))
 			task.SetDone()
@@ -180,8 +180,8 @@ func DownloadRelease(ctx context.Context, path, tag string) (*TaskProgress, erro
 	}
 
 	if found != "" {
-		task := NewTaskProgress()
-		go downloadFromURL(ctx, task, found, url, size)
+		task := NewTaskProgress(size)
+		go downloadFromURL(ctx, task, found, url)
 		return task, nil
 	}
 
