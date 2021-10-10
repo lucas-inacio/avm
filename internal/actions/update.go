@@ -63,21 +63,11 @@ func download(dir, version string) (string, error) {
 	return task.GetData().(string), nil
 }
 
-func decompress(path string) error {
-	task, err := manager.DecompressFileZip(context.Background(), path)
-	if err != nil {
-		return err
-	}
-
-	<- task.Done()
-	return nil
-}
-
 func ActionUpdate(cliCtx *cli.Context) error {
 	if cliCtx.NArg() != 0 {
 		return errors.New("update takes no parameters")
 	}
-	
+
 	version, err := shouldUpdate()
 	if err != nil {
 		return err
