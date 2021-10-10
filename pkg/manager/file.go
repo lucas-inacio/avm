@@ -6,11 +6,8 @@ import (
 	// "compress/gzip"
 	"context"
 	"errors"
-	"fmt"
 	"io"
 	"os"
-	// "path/filepath"
-	// "strings"
 )
 
 func GetUncompressedZipSize(files []*zip.File) int {
@@ -68,40 +65,6 @@ func TransferData(ctx context.Context, reader io.Reader, writer io.Writer) chan 
 	}()
 
 	return progress
-}
-
-func TransferFileContents(ctx context.Context, reader io.Reader, writer io.Writer, task *TaskProgress) {
-	b := make([]byte, 32768)
-	total := 0
-	defer task.SetDone()
-	for {
-		select {
-		case <- ctx.Done():
-			task.SetError(errors.New("interrupted"))
-			return
-		default:
-			count, err := reader.Read(b)
-			if count > 0 {
-				_, writeErr := writer.Write(b[:count])
-				if writeErr != nil {
-					task.SetError(writeErr)
-					return
-				}
-				total += count
-			}
-
-			if err == io.EOF {
-				return
-			}
-
-			if err != nil  {
-				task.SetError(err)
-				return
-			}
-
-			task.SetProgress(total)
-		}
-	}
 }
 
 func CompressFileZip(ctx context.Context, name string, paths []string) (*TaskProgress, error) {

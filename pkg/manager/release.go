@@ -45,10 +45,11 @@ func readData(reader io.ReadCloser) ([]byte, error) {
 }
 
 func downloadFromURL(ctx context.Context, task *TaskProgress, path, url string) {
+	defer task.SetDone()
+	
 	out, err := os.Create(path)
 	if err != nil {
 		task.SetError(err)
-		task.SetDone()
 		return
 	}
 	defer out.Close()
@@ -56,12 +57,14 @@ func downloadFromURL(ctx context.Context, task *TaskProgress, path, url string) 
 	res, err := http.Get(url)
 	if err != nil {
 		task.SetError(err)
-		task.SetDone()
 		return
 	}
 	defer res.Body.Close()
 
-	TransferFileContents(ctx, res.Body, out, task)
+	progress := TransferData(ctx, res.Body, out)
+	for value := range progress {
+		task.SetProgress(value)
+	}
 }
 
 func GetLatestRelease() (*Release, error) {
