@@ -18,7 +18,7 @@ func ActionGet(cliCtx *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	
+
 	dir, err := os.Getwd()
 	if err != nil {
 		return err
@@ -39,13 +39,16 @@ func ActionGet(cliCtx *cli.Context) error {
 	run := true
 	for run {
 		select {
-		case <- ticker.C:
+		case <-ticker.C:
 			bar.Set(task.GetProgress())
-		case <- task.Done():
+		case <-task.Done():
 			run = false
 		}
 	}
 
+	// Allow the progress bar to reach 100%
+	bar.Set(task.GetProgress())
+	time.Sleep(time.Second)
 	fmt.Println("Download successful")
 
 	return nil
