@@ -9,7 +9,6 @@ import (
 	"os"
 	"runtime"
 	"strings"
-	"time"
 	"unicode"
 )
 
@@ -62,44 +61,7 @@ func downloadFromURL(ctx context.Context, task *TaskProgress, path, url string) 
 	}
 	defer res.Body.Close()
 
-	total := 0
-	b := make([]byte, 32768)
-
-	ticker := time.NewTicker(time.Microsecond)
-	for {
-		select {
-		case <- ticker.C:
-			readCount, readErr := res.Body.Read(b)
-			if readCount > 0 {
-				for readCount > 0 {
-					writeCount, writeErr := out.Write(b[:readCount])
-					if writeErr != nil {
-						task.SetError(writeErr)
-						return
-					}
-					readCount -= writeCount
-					total += writeCount
-				}
-			}
-	
-			if readErr == io.EOF {
-				task.SetDone()
-				return
-			}
-			
-			if readErr != nil {
-				task.SetError(readErr)
-				task.SetDone()
-				return
-			}
-
-			task.SetProgress(total)
-		case <- ctx.Done():
-			task.SetError(errors.New("interrupted"))
-			task.SetDone()
-			return
-		}
-	}
+	TransferFileContents(ctx, res.Body, out, task)
 }
 
 func GetLatestRelease() (*Release, error) {
