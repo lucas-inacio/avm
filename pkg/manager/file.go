@@ -9,17 +9,29 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"path/filepath"
-	"strings"
+	// "path/filepath"
+	// "strings"
 )
 
 func GetUncompressedZipSize(files []*zip.File) int {
 	total := 0
 	for _, file := range files {
 		total += int(file.FileInfo().Size())
-		fmt.Println(file.FileInfo().Size())
 	}
 	return total
+}
+
+func GetFilesTotalSize(paths []string) (int, error) {
+	total := 0
+	for _, path := range paths {
+		info, err := os.Stat(path)
+		if err != nil {
+			return total, err
+		}
+
+		total += int(info.Size())
+	}
+	return total, nil
 }
 
 func TransferData(ctx context.Context, reader io.Reader, writer io.Writer) chan int {
@@ -42,7 +54,6 @@ func TransferData(ctx context.Context, reader io.Reader, writer io.Writer) chan 
 					}
 					total += count
 				}
-				
 				progress <- total
 
 				if err == io.EOF {
@@ -50,10 +61,8 @@ func TransferData(ctx context.Context, reader io.Reader, writer io.Writer) chan 
 				}
 	
 				if err != nil  {
-					fmt.Println("Error")
 					return
 				}
-	
 			}
 		}
 	}()
@@ -95,60 +104,49 @@ func TransferFileContents(ctx context.Context, reader io.Reader, writer io.Write
 	}
 }
 
-func CompressFileZip(ctx context.Context, path string) (*TaskProgress, error) {
-	pathZip := ""
-	// Replace extension
-	index := strings.LastIndex(path, ".")
-	if index >= 0 {
-		pathZip = path[:index+1] + "zip"
-	} else {
-		pathZip = path + ".zip"
-	}
-
-	// Output file
-	info, err := os.Stat(path)
+func CompressFileZip(ctx context.Context, name string, paths []string) (*TaskProgress, error) {
+	size, err := GetFilesTotalSize(paths)
 	if err != nil {
 		return nil, err
 	}
 
-	task := NewTaskProgress(int(info.Size()))
+	fileOut, outErr := os.Create(name)
+	if outErr != nil {
+		return nil, outErr
+	}
+	
+	task := NewTaskProgress(size)
 	go func () {
-		fileIn, inErr := os.Open(path)
-		if inErr != nil {
-			task.SetError(inErr)
-			task.SetDone()
-			return
-		}
-		defer fileIn.Close()
-
-		fileOut, outErr := os.Create(pathZip)
-		if outErr != nil {
-			task.SetError(outErr)
-			task.SetDone()
-			return
-		}
 		defer fileOut.Close()
+		defer task.SetDone()
 
-		header, headerErr := zip.FileInfoHeader(info)
-		if headerErr != nil {
-			task.SetError(headerErr)
-			task.SetDone()
-			return
-		}
-
-		header.Name = filepath.Base(path)
-		header.Method = zip.Deflate
-	
 		writer := zip.NewWriter(fileOut)
-		f, err := writer.CreateHeader(header)
-		if err != nil {
-			task.SetError(err)
-			task.SetDone()
-			return
-		}
 		defer writer.Close()
-	
-		TransferFileContents(ctx, fileIn, f, task)
+
+		totalSize := 0
+		for _, path := range paths {
+			fileIn, inErr := os.Open(path)
+			if inErr != nil {
+				task.SetError(inErr)
+				return
+			}
+
+			f, err := writer.Create(path)
+			if err != nil {
+				task.SetError(err)
+				return
+			}
+		
+			count := 0
+			progress := TransferData(ctx, fileIn, f)
+			for value := range progress {
+				count = value
+			}
+			totalSize += count
+			task.SetProgress(totalSize)
+
+			fileIn.Close()
+		}
 	}()
 
 	return task, nil
@@ -165,8 +163,6 @@ func DecompressFileZip(ctx context.Context, path string) (*TaskProgress, error) 
 	}
 
 	size := GetUncompressedZipSize(reader.File)
-	fmt.Println("Size:", size)
-
 	totalSize := 0
 	count := 0
 	task := NewTaskProgress(size)
@@ -196,7 +192,10 @@ func DecompressFileZip(ctx context.Context, path string) (*TaskProgress, error) 
 			totalSize += count
 			task.SetProgress(totalSize)
 		}
-		fmt.Println("After:", totalSize)
+		
+		if task.GetProgress() != task.GetTotal() {
+			task.SetError(errors.New("uncompressed size does not match"))
+		}
 	}()
 
 	return task, nil

@@ -12,7 +12,7 @@ func TestDownloadRelease(t *testing.T) {
 }
 
 func TestCompressFileZip(t *testing.T) {
-	task, err := manager.CompressFileZip(context.Background(), "data/test_file.txt")
+	task, err := manager.CompressFileZip(context.Background(), "agoravai.zip", []string{"tmp/arduino-cli.exe", "tmp/LICENSE.txt"})
 	if err != nil {
 		t.Error(err)
 	}
