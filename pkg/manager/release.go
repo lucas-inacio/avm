@@ -45,7 +45,7 @@ func readData(reader io.ReadCloser) ([]byte, error) {
 }
 
 func downloadFromURL(ctx context.Context, task *TaskProgress, path, url string) {
-	defer task.SetDone()
+	defer task.SetDone(path)
 	
 	out, err := os.Create(path)
 	if err != nil {
@@ -110,6 +110,15 @@ func GetReleases() ([]*Release, error) {
 }
 
 func DownloadRelease(ctx context.Context, path, tag string) (*TaskProgress, error) {
+	info, err := os.Stat(path)
+	if err != nil {
+		return nil, err
+	}
+
+	if !info.IsDir() {
+		return nil, errors.New("path must be a directory")
+	}
+
 	releases, err := GetReleases()
 	if err != nil {
 		return nil, err
