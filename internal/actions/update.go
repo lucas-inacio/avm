@@ -2,6 +2,7 @@ package actions
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
@@ -73,6 +74,10 @@ func decompress(path string) error {
 }
 
 func ActionUpdate(cliCtx *cli.Context) error {
+	if cliCtx.NArg() != 0 {
+		return errors.New("update takes no parameters")
+	}
+	
 	version, err := shouldUpdate()
 	if err != nil {
 		return err
