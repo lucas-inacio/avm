@@ -1,6 +1,7 @@
 package actions
 
 import (
+	"errors"
 	"fmt"
 
 	cli "github.com/urfave/cli/v2"
@@ -9,6 +10,10 @@ import (
 )
 
 func ActionAvailable(ctx *cli.Context) error {
+	if ctx.NArg() != 0 {
+		return errors.New("available takes no parameters")
+	}
+
 	releases, err := manager.GetReleases()
 	if err != nil {
 		return err

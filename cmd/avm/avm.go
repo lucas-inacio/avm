@@ -11,20 +11,20 @@ import (
 
 var CommandGet = &cli.Command{
 	Name:      "get",
-	Usage:     "download arduino-cli",
+	Usage:     "download arduino-cli to current directory",
 	ArgsUsage: `specify a version as returned by "avm version" to download that version`,
 	Action:    actions.ActionGet,
 }
 
 var CommandVersion = &cli.Command{
 	Name:      "version",
-	Usage:     "shows installed arduino-cli version",
+	Usage:     "show installed arduino-cli version",
 	Action:    actions.ActionVersion,
 }
 
 var CommandAvailable = &cli.Command{
 	Name:      "available",
-	Usage:     "lists available arduino-cli releases",
+	Usage:     "get available arduino-cli releases",
 	Action:    actions.ActionAvailable,
 }
 
