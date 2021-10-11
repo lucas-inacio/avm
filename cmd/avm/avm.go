@@ -11,33 +11,33 @@ import (
 
 var CommandGet = &cli.Command{
 	Name:      "get",
-	Usage:     "download arduino-cli to current directory",
-	ArgsUsage: `specify a version as returned by "avm available" to download that version`,
+	Usage:     "Download arduino-cli to current directory",
+	ArgsUsage: `Specify a version as returned by "avm available" to download that version`,
 	Action:    actions.ActionGet,
 }
 
 var CommandVersion = &cli.Command{
 	Name:      "version",
-	Usage:     "show installed arduino-cli version",
+	Usage:     "Show installed arduino-cli version",
 	Action:    actions.ActionVersion,
 }
 
 var CommandAvailable = &cli.Command{
 	Name:      "available",
-	Usage:     "get available arduino-cli releases",
+	Usage:     "Get available arduino-cli releases",
 	Action:    actions.ActionAvailable,
 }
 
 var CommandUpdate = &cli.Command{
 	Name:      "update",
-	Usage:     "update arduino-cli version",
+	Usage:     "Update arduino-cli version",
 	Action:    actions.ActionUpdate,
 }
 
 var CommandInstall = &cli.Command{
 	Name:      "install",
-	Usage:     "install specific arduino-cli version",
-	ArgsUsage: `specify a version string as returned by "avm available"`,
+	Usage:     "Install specific arduino-cli version",
+	ArgsUsage: `Specify a version string as returned by "avm available"`,
 	Action:    actions.ActionInstall,
 	Flags: []cli.Flag{
 		&cli.BoolFlag{
