@@ -36,7 +36,7 @@ var CommandUpdate = &cli.Command{
 
 var CommandInstall = &cli.Command{
 	Name:      "install",
-	Usage:     "install a arduino-cli version",
+	Usage:     "install specific arduino-cli version",
 	ArgsUsage: `specify a version string as returned by "avm available"`,
 	Action:    actions.ActionInstall,
 	Flags: []cli.Flag{
