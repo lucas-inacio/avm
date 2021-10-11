@@ -9,7 +9,6 @@ import (
 	"os"
 	"runtime"
 	"strings"
-	"unicode"
 )
 
 type Asset struct {
@@ -21,6 +20,13 @@ type Asset struct {
 type Release struct {
 	Tag string `json:"tag_name"`
 	Assets []Asset `json:"assets"`
+}
+
+var ArchMap = map[string]string{
+    "386": "32bit",
+    "amd64": "64bit",
+    "arm": "ARMv6",
+    "arm64": "ARM64",
 }
 
 func readData(reader io.ReadCloser) ([]byte, error) {
@@ -124,16 +130,8 @@ func DownloadRelease(ctx context.Context, path, tag string) (*TaskProgress, erro
 		return nil, err
 	}
 
-	// Extract numbers from GOARCH string
-	arch := func () string {
-		archString := ""
-		for _, character := range runtime.GOARCH {
-			if unicode.IsDigit(character) {
-				archString += string(character)
-			}
-		}
-		return archString
-	}()
+	// Map GOARCH to arduino-cli naming convention
+	arch := ArchMap[runtime.GOARCH]
 
 	platform := runtime.GOOS
 	found := ""
