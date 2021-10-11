@@ -12,7 +12,7 @@ import (
 var CommandGet = &cli.Command{
 	Name:      "get",
 	Usage:     "download arduino-cli to current directory",
-	ArgsUsage: `specify a version as returned by "avm version" to download that version`,
+	ArgsUsage: `specify a version as returned by "avm available" to download that version`,
 	Action:    actions.ActionGet,
 }
 
@@ -34,6 +34,25 @@ var CommandUpdate = &cli.Command{
 	Action:    actions.ActionUpdate,
 }
 
+var CommandInstall = &cli.Command{
+	Name:      "install",
+	Usage:     "install a arduino-cli version",
+	ArgsUsage: `specify a version string as returned by "avm available"`,
+	Action:    actions.ActionInstall,
+	Flags: []cli.Flag{
+		&cli.BoolFlag{
+			Name: "force",
+			Aliases: []string{"f"},
+			Usage: "overwrite current version",
+		},
+		&cli.StringFlag{
+			Name: "dir",
+			Aliases: []string{"d"},
+			Usage: "specify full path for installation",
+		},
+	},
+}
+
 func main() {
 	cliApp := &cli.App{
 		Name:  "avm",
@@ -49,6 +68,7 @@ func main() {
 			CommandVersion,
 			CommandAvailable,
 			CommandUpdate,
+			CommandInstall,
 		},
 	}
 
