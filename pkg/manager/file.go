@@ -68,6 +68,59 @@ func TransferData(ctx context.Context, reader io.Reader, writer io.Writer) chan 
 	return progress
 }
 
+func CompressFileZip(ctx context.Context, name string, paths []string) (*TaskProgress, error) {
+	size, err := GetFilesTotalSize(paths)
+	if err != nil {
+		return nil, err
+	}
+
+	fileOut, outErr := os.Create(name)
+	if outErr != nil {
+		return nil, outErr
+	}
+
+	task := NewTaskProgress(size)
+	go func() {
+		defer fileOut.Close()
+		defer task.SetDone(nil)
+
+		writer := zip.NewWriter(fileOut)
+		defer writer.Close()
+
+		totalSize := 0
+		for _, path := range paths {
+			fileIn, inErr := os.Open(path)
+			if inErr != nil {
+				task.SetError(inErr)
+				return
+			}
+
+			// If in same directory extract only the name. Or else preserve hierarchy.
+			if filepath.Dir(name) == filepath.Dir(path) {
+				path = filepath.Base(path)
+			}
+
+			f, err := writer.Create(path)
+			if err != nil {
+				task.SetError(err)
+				return
+			}
+
+			count := 0
+			progress := TransferData(ctx, fileIn, f)
+			for value := range progress {
+				count = value
+			}
+			totalSize += count
+			task.SetProgress(totalSize)
+
+			fileIn.Close()
+		}
+	}()
+
+	return task, nil
+}
+
 func CompressFileTarGz(ctx context.Context, path string) error {
 	return nil
 }

@@ -142,6 +142,48 @@ func TestDownloadRelease(t *testing.T) {
 	}
 }
 
+func TestCompressFileZip(t *testing.T) {
+	if err := os.Mkdir(TmpDirectory, os.ModeDir); err != nil {
+		t.Error(err)
+	}
+
+	if err := createDumbFiles(); err != nil {
+		t.Error(err)
+	}
+
+	task, err := manager.CompressFileZip(
+		context.Background(),
+		TmpDirectory + string(os.PathSeparator) + OutputFileName,
+		[]string{
+			TmpDirectory + string(os.PathSeparator) + DumbFileName1,
+			TmpDirectory + string(os.PathSeparator) + DumbFileName2,
+		},
+	)
+	if err != nil {
+		t.Error(err)
+	}
+
+	<- task.Done()
+
+	if task.GetError() != nil {
+		t.Error(task.GetError())
+	}
+
+	if task.GetProgress() != task.GetTotal() {
+		t.Fail()
+	}
+
+	_ , err = os.Stat(TmpDirectory + string(os.PathSeparator) + OutputFileName)
+	if err != nil {
+		t.Error(err)
+	}
+
+	err = removeDumbFiles()
+	if err != nil {
+		t.Error(err)
+	}
+}
+
 func TestDecompressFileZip(t *testing.T) {
 	task, err := manager.DecompressFileZip(
 		context.Background(), TmpDirectory + string(os.PathSeparator) + OutputFileName)
