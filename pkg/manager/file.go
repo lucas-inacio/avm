@@ -1,9 +1,9 @@
 package manager
 
 import (
-	// "archive/tar"
+	"archive/tar"
 	"archive/zip"
-	// "compress/gzip"
+	"compress/gzip"
 	"context"
 	"errors"
 	"io"
@@ -41,7 +41,7 @@ func TransferData(ctx context.Context, reader io.Reader, writer io.Writer) chan 
 		total := 0
 		for {
 			select {
-			case <- ctx.Done():
+			case <-ctx.Done():
 				return
 			default:
 				count, err := reader.Read(b)
@@ -57,8 +57,8 @@ func TransferData(ctx context.Context, reader io.Reader, writer io.Writer) chan 
 				if err == io.EOF {
 					return
 				}
-	
-				if err != nil  {
+
+				if err != nil {
 					return
 				}
 			}
@@ -78,9 +78,9 @@ func CompressFileZip(ctx context.Context, name string, paths []string) (*TaskPro
 	if outErr != nil {
 		return nil, outErr
 	}
-	
+
 	task := NewTaskProgress(size)
-	go func () {
+	go func() {
 		defer fileOut.Close()
 		defer task.SetDone(nil)
 
@@ -105,7 +105,7 @@ func CompressFileZip(ctx context.Context, name string, paths []string) (*TaskPro
 				task.SetError(err)
 				return
 			}
-		
+
 			count := 0
 			progress := TransferData(ctx, fileIn, f)
 			for value := range progress {
@@ -135,7 +135,7 @@ func DecompressFileZip(ctx context.Context, path string) (*TaskProgress, error) 
 	totalSize := 0
 	count := 0
 	task := NewTaskProgress(size)
-	go func () {
+	go func() {
 		defer reader.Close()
 		defer task.SetDone(nil)
 
@@ -161,9 +161,64 @@ func DecompressFileZip(ctx context.Context, path string) (*TaskProgress, error) 
 			totalSize += count
 			task.SetProgress(totalSize)
 		}
-		
+
 		if task.GetProgress() != task.GetTotal() {
 			task.SetError(errors.New("uncompressed size does not match"))
+		}
+	}()
+
+	return task, nil
+}
+
+func DecompressFileTargz(ctx context.Context, path string) (*TaskProgress, error) {
+	stream, err := os.Open(path)
+	if err != nil {
+		return nil, err
+	}
+
+	gzipReader, err := gzip.NewReader(stream)
+	if err != nil {
+		return nil, err
+	}
+
+	task := NewTaskProgress(100)
+	tarReader := tar.NewReader(gzipReader)
+	baseDir := filepath.Dir(path)
+	go func() {
+		defer stream.Close()
+		defer gzipReader.Close()
+		defer task.SetDone(nil)
+		for {
+			header, err := tarReader.Next()
+			if err == io.EOF {
+				break
+			} else if err != nil {
+				task.SetError(err)
+				return
+			}
+
+			if header.FileInfo().IsDir() {
+				if err := os.Mkdir(baseDir+string(os.PathSeparator)+header.Name, header.FileInfo().Mode()); err != nil {
+					task.SetError(err)
+					return
+				}
+				continue
+			}
+
+			file, err := os.OpenFile(
+				baseDir+string(os.PathSeparator)+header.Name,
+				os.O_CREATE|os.O_TRUNC|os.O_WRONLY,
+				header.FileInfo().Mode(),
+			)
+			if err != nil {
+				task.SetError(err)
+				return
+			}
+			if _, err := io.Copy(file, tarReader); err != nil {
+				task.SetError(err)
+				return
+			}
+			file.Close()
 		}
 	}()
 

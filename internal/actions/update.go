@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	cli "github.com/urfave/cli/v2"
@@ -89,13 +90,21 @@ func ActionUpdate(cliCtx *cli.Context) error {
 		return err
 	}
 	fmt.Println("Download completed")
-	
-	task, err := manager.DecompressFileZip(context.Background(), path)
-	if err != nil {
-		return err
+
+	var task *manager.TaskProgress
+	if strings.HasSuffix(path, ".zip") {
+		task, err = manager.DecompressFileZip(context.Background(), path)
+		if err != nil {
+			return err
+		}
+	} else {
+		task, err = manager.DecompressFileTargz(context.Background(), path)
+		if err != nil {
+			return err
+		}
 	}
 
-	<- task.Done()
+	<-task.Done()
 	fmt.Println("Installation completed")
 	return nil
 }

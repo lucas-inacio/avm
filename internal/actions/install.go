@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 
 	cli "github.com/urfave/cli/v2"
 
@@ -49,10 +50,22 @@ func ActionInstall(ctx *cli.Context) error {
 	}
 	fmt.Println("Download completed")
 
-	task, err := manager.DecompressFileZip(context.Background(), path)
-	if err != nil {
-		return err
-	}	
+	// task, err := manager.DecompressFileZip(context.Background(), path)
+	// if err != nil {
+	// 	return err
+	// }	
+	var task *manager.TaskProgress
+	if strings.HasSuffix(path, ".zip") {
+		task, err = manager.DecompressFileZip(context.Background(), path)
+		if err != nil {
+			return err
+		}
+	} else {
+		task, err = manager.DecompressFileTargz(context.Background(), path)
+		if err != nil {
+			return err
+		}
+	}
 	<- task.Done()
 	fmt.Println("Installation completed")
 
