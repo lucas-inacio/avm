@@ -35,7 +35,7 @@ func ActionInstall(ctx *cli.Context) error {
 
 	overwrite := false
 	newDir := ""
-	if ctx.String("dir") != ""  && ctx.String("dir") != dir {
+	if ctx.String("dir") != "" && ctx.String("dir") != dir {
 		newDir = ctx.String("dir")
 		overwrite = true
 	} else {
@@ -50,10 +50,6 @@ func ActionInstall(ctx *cli.Context) error {
 	}
 	fmt.Println("Download completed")
 
-	// task, err := manager.DecompressFileZip(context.Background(), path)
-	// if err != nil {
-	// 	return err
-	// }	
 	var task *manager.TaskProgress
 	if strings.HasSuffix(path, ".zip") {
 		task, err = manager.DecompressFileZip(context.Background(), path)
@@ -66,7 +62,7 @@ func ActionInstall(ctx *cli.Context) error {
 			return err
 		}
 	}
-	<- task.Done()
+	<-task.Done()
 	fmt.Println("Installation completed")
 
 	if overwrite {
