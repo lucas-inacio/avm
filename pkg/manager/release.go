@@ -25,8 +25,8 @@ type Release struct {
 var ArchMap = map[string]string{
     "386": "32bit",
     "amd64": "64bit",
-    "arm": "ARMv6",
-    "arm64": "ARM64",
+    "arm": "armv6",
+    "arm64": "arm64",
 }
 
 func readData(reader io.ReadCloser) ([]byte, error) {
