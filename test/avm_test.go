@@ -96,7 +96,7 @@ func TestDownloadRelease(t *testing.T) {
 		t.Error(err)
 	}
 
-	if err := os.Mkdir(TmpDirectory, os.ModeDir); err != nil {
+	if err := os.Mkdir(TmpDirectory, 0700); err != nil {
 		t.Error(err)
 	}
 
@@ -105,7 +105,7 @@ func TestDownloadRelease(t *testing.T) {
 		t.Error(err)
 	}
 
-	<- task.Done()
+	<-task.Done()
 
 	dirs, err := os.ReadDir(TmpDirectory)
 	if err != nil {
@@ -120,14 +120,14 @@ func TestDownloadRelease(t *testing.T) {
 	found := false
 	for _, item := range dirs {
 
-		name = func () string {
+		name = func() string {
 			result := ""
 			for _, r := range item.Name() {
 				result += string(unicode.ToLower(r))
 			}
 			return result
 		}()
-		
+
 		if strings.Contains(name, runtime.GOOS) {
 			found = true
 		}
@@ -143,7 +143,7 @@ func TestDownloadRelease(t *testing.T) {
 }
 
 func TestCompressFileZip(t *testing.T) {
-	if err := os.Mkdir(TmpDirectory, os.ModeDir); err != nil {
+	if err := os.Mkdir(TmpDirectory, 0700); err != nil {
 		t.Error(err)
 	}
 
@@ -153,7 +153,7 @@ func TestCompressFileZip(t *testing.T) {
 
 	task, err := manager.CompressFileZip(
 		context.Background(),
-		TmpDirectory + string(os.PathSeparator) + OutputFileName,
+		TmpDirectory+string(os.PathSeparator)+OutputFileName,
 		[]string{
 			TmpDirectory + string(os.PathSeparator) + DumbFileName1,
 			TmpDirectory + string(os.PathSeparator) + DumbFileName2,
@@ -163,7 +163,7 @@ func TestCompressFileZip(t *testing.T) {
 		t.Error(err)
 	}
 
-	<- task.Done()
+	<-task.Done()
 
 	if task.GetError() != nil {
 		t.Error(task.GetError())
@@ -173,7 +173,7 @@ func TestCompressFileZip(t *testing.T) {
 		t.Fail()
 	}
 
-	_ , err = os.Stat(TmpDirectory + string(os.PathSeparator) + OutputFileName)
+	_, err = os.Stat(TmpDirectory + string(os.PathSeparator) + OutputFileName)
 	if err != nil {
 		t.Error(err)
 	}
@@ -186,32 +186,32 @@ func TestCompressFileZip(t *testing.T) {
 
 func TestDecompressFileZip(t *testing.T) {
 	task, err := manager.DecompressFileZip(
-		context.Background(), TmpDirectory + string(os.PathSeparator) + OutputFileName)
+		context.Background(), TmpDirectory+string(os.PathSeparator)+OutputFileName)
 	if err != nil {
 		t.Error(err)
 	}
-	
-	<- task.Done()
-	
+
+	<-task.Done()
+
 	if task.GetError() != nil {
 		t.Error(task.GetError())
 	}
-	
+
 	if task.GetProgress() != task.GetTotal() {
 		t.Fail()
 	}
 
 	check1 := checkFileContent(
-		TmpDirectory + string(os.PathSeparator) + DumbFileName1,
+		TmpDirectory+string(os.PathSeparator)+DumbFileName1,
 		DumbFileContent1,
 	)
-		
+
 	if check1 != nil {
 		t.Error(check1)
 	}
 
 	check2 := checkFileContent(
-		TmpDirectory + string(os.PathSeparator) + DumbFileName2,
+		TmpDirectory+string(os.PathSeparator)+DumbFileName2,
 		DumbFileContent2,
 	)
 	if check2 != nil {
