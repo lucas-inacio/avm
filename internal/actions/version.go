@@ -24,9 +24,9 @@ func ActionVersion(ctx *cli.Context) error {
 		return err
 	}
 
-	fmt.Println("Version ", version, " found")
+	fmt.Println("Version", version, "found")
 	if release.Tag != version {
-		fmt.Println("Version ", release.Tag, " is available. Run avm update to download it.")
+		fmt.Println("Version", release.Tag, "is available. Run avm update to download it.")
 	}
 
 	return nil
