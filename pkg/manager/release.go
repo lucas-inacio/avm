@@ -12,21 +12,21 @@ import (
 )
 
 type Asset struct {
-	Name string `json:"name"`
+	Name                 string `json:"name"`
 	Browser_download_url string `json:"browser_download_url"`
-	Size int `json:"size"`
+	Size                 int    `json:"size"`
 }
 
 type Release struct {
-	Tag string `json:"tag_name"`
+	Tag    string  `json:"tag_name"`
 	Assets []Asset `json:"assets"`
 }
 
 var ArchMap = map[string]string{
-    "386": "32bit",
-    "amd64": "64bit",
-    "arm": "armv6",
-    "arm64": "arm64",
+	"386":   "32bit",
+	"amd64": "64bit",
+	"arm":   "armv6",
+	"arm64": "arm64",
 }
 
 func readData(reader io.ReadCloser) ([]byte, error) {
@@ -52,7 +52,7 @@ func readData(reader io.ReadCloser) ([]byte, error) {
 
 func downloadFromURL(ctx context.Context, task *TaskProgress, path, url string) {
 	defer task.SetDone(path)
-	
+
 	out, err := os.Create(path)
 	if err != nil {
 		task.SetError(err)
@@ -142,7 +142,8 @@ func DownloadRelease(ctx context.Context, path, tag string) (*TaskProgress, erro
 			for _, asset := range rel.Assets {
 				download := strings.ToLower(asset.Browser_download_url)
 				size = asset.Size
-				if strings.Contains(download, arch) && strings.Contains(download, platform) {
+				if strings.Contains(download, arch) && strings.Contains(download, platform) &&
+					(strings.Contains(download, ".zip") || strings.Contains(download, ".tar.gz")) {
 					found = path + string(os.PathSeparator) + asset.Name
 					url = asset.Browser_download_url
 					break
