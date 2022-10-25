@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"os"
 	"strings"
 
 	cli "github.com/urfave/cli/v2"
@@ -63,6 +64,12 @@ func ActionInstall(ctx *cli.Context) error {
 		}
 	}
 	<-task.Done()
+
+	fmt.Println("Cleaning up")
+	if err := os.Remove(path); err != nil {
+		return err
+	}
+
 	fmt.Println("Installation completed")
 
 	if overwrite {
